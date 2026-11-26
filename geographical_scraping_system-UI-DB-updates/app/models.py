@@ -1,0 +1,175 @@
+from typing import Any, Dict, List, Optional
+from pydantic import BaseModel, Field
+
+
+class ScrapeRequest(BaseModel):
+    country: str = "India"
+    state: str = ""
+    city: str
+    category: str = "Digital Marketing"
+    limit: int = Field(default=25, ge=1)
+    phone_required: bool = False
+    phone_only: bool = False
+    multi_locality: bool = False
+    locality: str = ""
+    batch_size: int = Field(default=10, ge=1)
+    webhook_url: Optional[str] = ""
+
+
+class Lead(BaseModel):
+    company_name: str
+    sector: str = "Digital Marketing"
+    city: str = ""
+    state: str = ""
+    locality: str = ""
+    website: str = ""
+    phone: str = ""
+    has_phone: bool = False
+    phone_type: str = "none"
+    email: str = ""
+    contact_person: str = ""
+    contact_role: str = ""
+    company_size: str = ""
+    company_age: str = ""
+    industry_subcategory: str = ""
+    services: List[str] = []
+    location_type: str = "unverified"
+    source: str = "Public Web Discovery"
+    contact_validation: str = ""
+    verification_status: str = "verified"
+    lead_quality_score: int = Field(default=0, ge=0, le=100)
+    score_reason: str = ""
+    evidence: List[str] = []
+
+
+class ScrapeResponse(BaseModel):
+    requested_city: str
+    requested_category: str
+    discovered: int
+    qualified: int
+    total_qualified: int = 0
+    leads_with_phone: int = 0
+    phone_required: bool = False
+    duration_seconds: float = 0.0
+    leads: List[Lead]
+    discovery_data: List[Dict[str, Any]] = []
+    discovery_records: List[Dict[str, Any]] = []
+    csv_file: str
+    phone_leads_csv_file: str = ""
+    discovery_csv_file: str = ""
+    master_excel_file: str = ""
+    campaign_shards: List[Dict[str, Any]] = []
+    webhook_delivery_results: List[Dict[str, Any]] = []
+
+
+class CampaignStartRequest(BaseModel):
+    city: str
+    category: str = "Digital Marketing"
+    target_limit: int = Field(default=250, ge=10, le=5000)
+    state: str = ""
+    country: str = "India"
+    phone_required: bool = True
+
+
+class CampaignStatusResponse(BaseModel):
+    is_active: bool
+    campaign_id: str = ""
+    city: str = ""
+    category: str = ""
+    target_limit: int = 0
+    current_shard: str = ""
+    shard_index: int = 0
+    total_shards: int = 0
+    leads_accumulated: int = 0
+    percent_complete: int = 0
+    active_message: str = ""
+    status: str = "idle"
+    started_at: str = ""
+    completed_at: str = ""
+    error: str = ""
+    recent_activity: List[Any] = []
+
+
+# =========================================================================
+# CRM Integration Models
+# =========================================================================
+
+class CRMDestinationCreate(BaseModel):
+    destination_id: Optional[str] = None
+    customer_name: str
+    crm_type: str = "webhook"  # webhook, hubspot, zoho, generic_rest
+    target_url: str
+    api_key: Optional[str] = ""
+    city_filter: Optional[str] = "*"
+    headers: Optional[Dict[str, str]] = None
+    field_mapping: Optional[Dict[str, str]] = None
+    auto_sync: bool = True
+    is_active: bool = True
+
+
+class CRMDestinationUpdate(BaseModel):
+    customer_name: Optional[str] = None
+    crm_type: Optional[str] = None
+    target_url: Optional[str] = None
+    api_key: Optional[str] = None
+    city_filter: Optional[str] = None
+    headers: Optional[Dict[str, str]] = None
+    field_mapping: Optional[Dict[str, str]] = None
+    auto_sync: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+
+class CRMExportRequest(BaseModel):
+    city: str = ""
+    destination_id: Optional[str] = None
+    target_url: Optional[str] = None
+    crm_type: Optional[str] = "webhook"
+    api_key: Optional[str] = ""
+    headers: Optional[Dict[str, str]] = None
+    field_mapping: Optional[Dict[str, str]] = None
+    limit: int = 100
+    phone_only: bool = False
+    category: str = ""
+    leads: Optional[List[Dict[str, Any]]] = None
+
+
+class CRMTestConnectionRequest(BaseModel):
+    target_url: str
+    crm_type: str = "webhook"
+    api_key: Optional[str] = ""
+    headers: Optional[Dict[str, str]] = None
+    timeout: float = 10.0
+
+
+# =========================================================================
+# Webhook Batch Streaming & Deduplication Models
+# =========================================================================
+
+class WebhookBatchDeliveryResult(BaseModel):
+    delivered: bool
+    status_code: int
+    batch_count: int
+    timestamp: str
+    target_url: str
+    error_message: Optional[str] = None
+    response_summary: Optional[str] = None
+
+
+class WebhookStreamBatchRequest(BaseModel):
+    webhook_url: Optional[str] = None
+    batch_size: int = Field(default=10, ge=1)
+    items: List[Dict[str, Any]] = []
+    auto_flush: bool = True
+
+
+class WebhookStreamBatchResponse(BaseModel):
+    success: bool
+    target_webhook_url: str
+    batch_size_N: int
+    total_received: int
+    unique_accumulated: int
+    duplicates_filtered: int
+    batches_dispatched: int
+    pending_in_buffer: int
+    delivery_results: List[WebhookBatchDeliveryResult]
+
